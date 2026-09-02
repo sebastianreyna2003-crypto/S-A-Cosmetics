@@ -37,5 +37,5 @@ function cancelEdit(){editingId=null;name.value="";price.value="";stock.value=""
 async function deleteProduct(id){if(!confirm("¿Eliminar este producto?"))return;const{error}=await supabaseClient.from("products").delete().eq("id",id);if(error)return alert("No se pudo eliminar: "+error.message);cart=cart.filter(x=>x.id!==id);persistCart();await loadProducts()}
 function removeFromCart(id){cart=cart.filter(x=>x.id!==id);persistCart();renderCart()}function clearCart(){if(!cart.length)return;if(confirm("¿Vaciar todo el carrito?")){cart=[];persistCart();renderCart()}}function openCart(){document.getElementById("cart").classList.add("open")}function closeCart(){document.getElementById("cart").classList.remove("open")}
 function whatsapp(){if(!cart.length)return alert("El carrito está vacío.");let total=0;const lines=cart.map(x=>{const p=products.find(y=>y.id===x.id);total+=p.price*x.qty;return`• ${p.name} x${x.qty} — ${money(p.price*x.qty)}`}).join("\n"),msg=`Hola! Pedí estos productos:\n\n${lines}\n\nTotal: ${money(total)}`;window.open("https://wa.me/5493532415606?text="+encodeURIComponent(msg),"_blank")}
-loadProducts();
+window.addEventListener("load", loadProducts);
 </script></body></html>
