@@ -19,7 +19,39 @@ const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY
 let products=[],cart=JSON.parse(localStorage.getItem("sa_cart")||"[]"),editingId=null;
 const money=n=>"$"+Number(n).toLocaleString("es-AR");function persistCart(){localStorage.setItem("sa_cart",JSON.stringify(cart))}
 function normalize(p){return{id:p.id,name:p.name||"",category:p.category||"Otros",price:Number(p.price)||0,stock:Number(p.stock)||0,image:p.image_url||""}}
-async function loadProducts(){const result=await supabaseClient.from("products").select("*").order("created_at",{ascending:true});if(result.error){console.error(result.error);alert("No se pudieron cargar los productos desde Supabase: "+result.error.message);return}products=result.data.map(normalize);render()}
+async function loadProducts(){
+  const cached = localStorage.getItem("sa_products");
+
+  if(cached){
+    try{
+      products = JSON.parse(cached);
+      render();
+      renderAdmin();
+    }catch(e){
+      console.error("Error leyendo productos guardados", e);
+    }
+  }
+
+  try{
+    const result = await supabaseClient
+      .from("products")
+      .select("*")
+      .order("created_at",{ascending:true});
+
+    if(result.error){
+      console.error(result.error);
+      return;
+    }
+
+    products = result.data.map(normalize);
+    localStorage.setItem("sa_products", JSON.stringify(products));
+
+    render();
+    renderAdmin();
+  }catch(e){
+    console.error("Error cargando productos:", e);
+  }
+}const result=await supabaseClient.from("products").select("*").order("created_at",{ascending:true});if(result.error){console.error(result.error);alert("No se pudieron cargar los productos desde Supabase: "+result.error.message);return}products=result.data.map(normalize);render()}
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]))}
 function render(){const cats=["Todos",...new Set(products.map(p=>p.category))];document.getElementById("cats").innerHTML=cats.map((c,i)=>`<button class="cat ${i===0?'active':''}" onclick='filter(${JSON.stringify(c)},this)'>${escapeHtml(c)}</button>`).join("");filter("Todos",document.querySelector(".cat"));renderAdmin();renderCart()}
 function filter(cat,btn){document.querySelectorAll(".cat").forEach(x=>x.classList.remove("active"));if(btn)btn.classList.add("active");const list=cat==="Todos"?products:products.filter(p=>p.category===cat),groups=cat==="Todos"?[...new Set(list.map(p=>p.category))]:[cat];document.getElementById("shop").innerHTML=groups.map(g=>`<section><h2>${escapeHtml(g)}</h2><div class="grid">${list.filter(p=>p.category===g).map(card).join("")}</div></section>`).join("")}
